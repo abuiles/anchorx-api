@@ -7,6 +7,18 @@ const resolvers = {
   Query: {
   },
   Mutation: {
+    signup(_, { username }, context: Context, info) {
+      const data = {
+        username,
+        stellarAccount: '1234',
+        stellarSeed: '1234'
+      }
+
+      return context.db.mutation.createUser(
+        { data },
+        info
+      )
+    },
   },
 }
 
