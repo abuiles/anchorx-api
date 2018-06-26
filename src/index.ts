@@ -2,6 +2,7 @@ import { GraphQLServer } from 'graphql-yoga'
 import { importSchema } from 'graphql-import'
 import { Prisma } from './generated/prisma'
 import { Context } from './utils'
+import { Keypair } from 'stellar-sdk'
 
 const resolvers = {
   Query: {
@@ -18,10 +19,12 @@ const resolvers = {
   },
   Mutation: {
     signup(_, { username }, context: Context, info) {
+      const keypair = Keypair.random()
+
       const data = {
         username,
-        stellarAccount: '1234',
-        stellarSeed: '1234'
+        stellarAccount: keypair.publicKey(),
+        stellarSeed: keypair.secret()
       }
 
       return context.db.mutation.createUser(
