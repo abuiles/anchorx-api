@@ -5,6 +5,16 @@ import { Context } from './utils'
 
 const resolvers = {
   Query: {
+    user(_, { username }, context: Context, info) {
+      return context.db.query.user(
+        {
+          where: {
+            username
+          }
+        },
+        info
+      )
+    }
   },
   Mutation: {
     signup(_, { username }, context: Context, info) {
