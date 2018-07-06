@@ -4,6 +4,7 @@ import { Prisma } from './generated/prisma'
 import { Context } from './utils'
 import { Keypair, Network, Server, TransactionBuilder, Operation } from 'stellar-sdk'
 import { AES } from 'crypto-js'
+const ENVCryptoSecret = 'StellarIsAwesome-But-Do-Not-Put-This-Value-In-Code'
 
 const resolvers = {
   Query: {
@@ -22,11 +23,9 @@ const resolvers = {
     async signup(_, { username }, context: Context, info) {
       const keypair = Keypair.random()
 
-      const configCryptoScret = 'StellarIsAwesome-But-Do-Not-Put-This-Value-In-Code'
-
       const secret = AES.encrypt(
         keypair.secret(),
-        configCryptoScret
+        ENVCryptoSecret
       ).toString()
 
       const data = {
