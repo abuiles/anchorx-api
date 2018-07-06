@@ -2,8 +2,20 @@ import { GraphQLServer } from 'graphql-yoga'
 import { importSchema } from 'graphql-import'
 import { Prisma } from './generated/prisma'
 import { Context } from './utils'
-import { Keypair, Network, Server, TransactionBuilder, Operation } from 'stellar-sdk'
-import { AES } from 'crypto-js'
+
+import {
+  Asset,
+  Keypair,
+  Memo,
+  Network,
+  Operation,
+  Server,
+  TransactionBuilder
+} from 'stellar-sdk'
+
+import { AES, enc } from 'crypto-js'
+
+const ENVCryptoSecret = 'StellarIsAwesome-But-Do-Not-Put-This-Value-In-Code'
 
 const resolvers = {
   Query: {
@@ -22,11 +34,9 @@ const resolvers = {
     async signup(_, { username }, context: Context, info) {
       const keypair = Keypair.random()
 
-      const configCryptoScret = 'StellarIsAwesome-But-Do-Not-Put-This-Value-In-Code'
-
       const secret = AES.encrypt(
         keypair.secret(),
-        configCryptoScret
+        ENVCryptoSecret
       ).toString()
 
       const data = {
@@ -74,6 +84,62 @@ const resolvers = {
 
       return user
     },
+    /*
+      For production apps don't rely  on the API to send you the senderUsername!
+
+      It should be based on the Auth/session token.
+    */
+    async payment(_, { amount, senderUsername, recipientUsername, memo }, context: Context, info) {
+      const result = await context.db.query.users({
+        where: {
+          username_in: [senderUsername, recipientUsername]
+        }
+      })
+
+      const [sender, recipient] = result
+
+      Network.useTestNetwork();
+      const stellarServer = new Server('https://horizon-testnet.stellar.org');
+
+      const signerKeys = Keypair.fromSecret(
+        // Use something like KMS in production
+        AES.decrypt(
+          sender.stellarSeed,
+          ENVCryptoSecret
+        ).toString(enc.Utf8)
+      )
+
+      const account = await stellarServer.loadAccount(sender.stellarAccount)
+
+      /*
+        Payments require an asset type, for now users will be sending
+        lumens. In the next chapter you'll create a custom asset
+        representing Dollars and use it.
+      */
+      const asset = Asset.native()
+
+      let transaction = new TransactionBuilder(account)
+        .addOperation(
+          Operation.payment({
+            destination: recipient.stellarAccount,
+            asset,
+            amount
+          })
+        ).addMemo(Memo.text('https://goo.gl/6pDRPi'))
+        .build()
+
+      transaction.sign(signerKeys)
+
+      try {
+        const { hash } = await stellarServer.submitTransaction(transaction)
+
+        return { id: hash }
+      } catch (e) {
+        console.log(`failure ${e}`)
+
+        throw e
+      }
+    }
   },
 }
 

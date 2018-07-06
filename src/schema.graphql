@@ -1,9 +1,15 @@
 # import User from './generated/prisma.graphql'
 
+type Transaction {
+  id: ID!
+  memo: String
+}
+
 type Query {
   user(username: String!): User
 }
 
 type Mutation {
   signup(username: String!): User!
+  payment(amount: String!, senderUsername: String!, recipientUsername: String!, memo: String): Transaction
 }
