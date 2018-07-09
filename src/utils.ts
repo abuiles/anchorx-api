@@ -26,8 +26,6 @@ export async function createAccountInLedger(newAccount) {
 
     // Never put values like the an account seed in code.
     const provisionerKeyPair = Keypair.fromSecret('SA72TGXRHE26WC5G5MTNURFUFBHZHTIQKF5AQWRXJMJGZUF4XY6HFWJ4')
-    const issuerKeyPair = Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX')
-
     const provisioner = await stellarServer.loadAccount(provisionerKeyPair.publicKey())
 
     console.log('creating account in ledger', newAccount)
@@ -71,5 +69,37 @@ export async function createTrustline(accountKeypair) {
     return result
   } catch (e) {
     console.log('create trustline failed.', e)
+  }
+}
+
+export async function allowTrust(trustor) {
+  Network.useTestNetwork();
+  const stellarServer = new Server('https://horizon-testnet.stellar.org');
+
+  try {
+    // Never store secrets in code! Use something like KMS and put
+    // this somewhere were few people can access it.
+    const issuingKeys = Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX')
+    const issuingAccount = await stellarServer.loadAccount(issuingKeys.publicKey())
+
+    const transaction = new TransactionBuilder(issuingAccount)
+      .addOperation(
+        Operation.allowTrust({
+          trustor,
+          assetCode: AnchorXUSD.code,
+          authorize: true
+        })
+      )
+      .build();
+
+    transaction.sign(issuingKeys);
+
+    const result = await stellarServer.submitTransaction(transaction)
+
+    console.log('trust allowed', result)
+
+    return result
+  } catch (e) {
+    console.log('allow trust failed', e)
   }
 }

@@ -3,6 +3,7 @@ import { importSchema } from 'graphql-import'
 import { Prisma } from './generated/prisma'
 import {
   Context,
+  allowTrust,
   createAccountInLedger,
   createTrustline
 } from './utils'
@@ -60,9 +61,9 @@ const resolvers = {
         app. Use something like AWS lambda, or a separate system to
         provision the Stellar account.
       */
-
       await createAccountInLedger(keypair.publicKey())
       await createTrustline(keypair)
+      await allowTrust(keypair.publicKey())
 
       return user
     },
