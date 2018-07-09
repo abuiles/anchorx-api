@@ -1,6 +1,7 @@
 import {
   Asset,
   Keypair,
+  Memo,
   Network,
   Operation,
   Server,
@@ -101,5 +102,33 @@ export async function allowTrust(trustor: string) {
     return result
   } catch (e) {
     console.log('allow trust failed', e)
+  }
+}
+
+export async function payment(signerKeys: Keypair, destination: string, amount: string) {
+  Network.useTestNetwork();
+  const stellarServer = new Server('https://horizon-testnet.stellar.org');
+
+  const account = await stellarServer.loadAccount(signerKeys.publicKey())
+
+  let transaction = new TransactionBuilder(account)
+    .addOperation(
+      Operation.payment({
+        destination,
+        asset: AnchorXUSD,
+        amount
+      })
+    ).addMemo(Memo.text('https://goo.gl/6pDRPi'))
+    .build()
+
+  transaction.sign(signerKeys)
+
+  try {
+    const { hash } = await stellarServer.submitTransaction(transaction)
+
+    return { id: hash }
+  } catch (e) {
+    console.log(`failure ${e}`)
+    throw e
   }
 }
