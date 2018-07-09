@@ -123,10 +123,11 @@ export async function payment(signerKeys: Keypair, destination: string, amount: 
 
   transaction.sign(signerKeys)
 
+  console.log(`sending ${amount} from ${signerKeys.publicKey()} to ${destination} `)
   try {
-    const { hash } = await stellarServer.submitTransaction(transaction)
+    const result = await stellarServer.submitTransaction(transaction)
 
-    return { id: hash }
+    return result
   } catch (e) {
     console.log(`failure ${e}`)
     throw e

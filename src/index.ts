@@ -86,10 +86,8 @@ const resolvers = {
         }
       })
 
-      const [sender, recipient] = result
-
-      Network.useTestNetwork();
-      const stellarServer = new Server('https://horizon-testnet.stellar.org');
+      const sender = result.find(u => u.username === senderUsername)
+      const recipient = result.find(u => u.username === recipientUsername)
 
       const signerKeys = Keypair.fromSecret(
         // Use something like KMS in production
@@ -99,29 +97,12 @@ const resolvers = {
         ).toString(enc.Utf8)
       )
 
-      const account = await stellarServer.loadAccount(sender.stellarAccount)
-
-      /*
-        Payments require an asset type, for now users will be sending
-        lumens. In the next chapter you'll create a custom asset
-        representing Dollars and use it.
-      */
-      const asset = Asset.native()
-
-      let transaction = new TransactionBuilder(account)
-        .addOperation(
-          Operation.payment({
-            destination: recipient.stellarAccount,
-            asset,
-            amount
-          })
-        ).addMemo(Memo.text('https://goo.gl/6pDRPi'))
-        .build()
-
-      transaction.sign(signerKeys)
-
       try {
-        const { hash } = await stellarServer.submitTransaction(transaction)
+        const { hash } = await payment(
+          signerKeys,
+          recipient.stellarAccount,
+          amount
+        )
 
         return { id: hash }
       } catch (e) {
