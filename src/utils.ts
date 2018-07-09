@@ -123,6 +123,7 @@ export async function payment(signerKeys: Keypair, destination: string, amount: 
 
   transaction.sign(signerKeys)
 
+  console.log(`sending ${amount} from ${signerKeys.publicKey()} to ${destination} `)
   try {
     const result = await stellarServer.submitTransaction(transaction)
 
