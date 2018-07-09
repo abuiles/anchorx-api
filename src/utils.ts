@@ -19,7 +19,7 @@ export const AnchorXUSD = new Asset(
   'GBX67BEOABQAELIP2XTC6JXHJPASKYCIQNS7WF6GWPSCBEAJEK74HK36'
 )
 
-export async function createAccountInLedger(newAccount) {
+export async function createAccountInLedger(newAccount: string) {
   try {
     Network.useTestNetwork();
     const stellarServer = new Server('https://horizon-testnet.stellar.org');
@@ -47,7 +47,7 @@ export async function createAccountInLedger(newAccount) {
   }
 }
 
-export async function createTrustline(accountKeypair) {
+export async function createTrustline(accountKeypair: Keypair) {
   Network.useTestNetwork();
   const stellarServer = new Server('https://horizon-testnet.stellar.org');
 
@@ -72,7 +72,7 @@ export async function createTrustline(accountKeypair) {
   }
 }
 
-export async function allowTrust(trustor) {
+export async function allowTrust(trustor: string) {
   Network.useTestNetwork();
   const stellarServer = new Server('https://horizon-testnet.stellar.org');
 
