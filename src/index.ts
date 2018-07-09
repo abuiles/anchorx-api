@@ -1,7 +1,11 @@
 import { GraphQLServer } from 'graphql-yoga'
 import { importSchema } from 'graphql-import'
 import { Prisma } from './generated/prisma'
-import { Context, createAccountInLedger } from './utils'
+import {
+  Context,
+  createAccountInLedger,
+  createTrustline
+} from './utils'
 
 import {
   Asset,
@@ -58,6 +62,7 @@ const resolvers = {
       */
 
       await createAccountInLedger(keypair.publicKey())
+      await createTrustline(keypair)
 
       return user
     },
