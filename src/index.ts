@@ -5,7 +5,8 @@ import {
   Context,
   allowTrust,
   createAccountInLedger,
-  createTrustline
+  createTrustline,
+  payment
 } from './utils'
 
 import {
@@ -64,6 +65,12 @@ const resolvers = {
       await createAccountInLedger(keypair.publicKey())
       await createTrustline(keypair)
       await allowTrust(keypair.publicKey())
+      await payment(
+        // keypair for issuing account - no bueno, we'll replace this later
+        Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX'),
+        keypair.publicKey(),
+        '10'
+      )
 
       return user
     },
