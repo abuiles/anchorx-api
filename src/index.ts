@@ -110,6 +110,28 @@ const resolvers = {
 
         throw e
       }
+    },
+    async credit(_, { amount, username }, context: Context, info) {
+      const user = await context.db.query.user({
+        where: {
+          username: username
+        }
+      })
+
+      try {
+        const { hash } = await payment(
+          // keypair for issuing account - no bueno
+          Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX'),
+          user.stellarAccount,
+          amount
+        )
+
+        return { id: hash }
+      } catch (e) {
+        console.log(`failure ${e}`)
+
+        throw e
+      }
     }
   },
 }
