@@ -132,6 +132,40 @@ const resolvers = {
 
         throw e
       }
+    },
+    async debit(_, { amount, username }, context: Context, info) {
+      const user = await context.db.query.user({
+        where: {
+          username: username
+        }
+      })
+
+      const keypair = Keypair.fromSecret(
+        AES.decrypt(
+          user.stellarSeed,
+          ENVCryptoSecret
+        ).toString(enc.Utf8)
+      )
+
+      // When you send back a custom asset to the issuing account, the
+      // asset you send back get destroyed
+      const issuingAccount = 'GBX67BEOABQAELIP2XTC6JXHJPASKYCIQNS7WF6GWPSCBEAJEK74HK36'
+
+      try {
+        const { hash } = await payment(
+          keypair,
+          issuingAccount,
+          amount
+        )
+
+        console.log(`account ${keypair.publicKey()} debited - now transfer real money to ${username} bank account`)
+
+        return { id: hash }
+      } catch (e) {
+        console.log(`failure ${e}`)
+
+        throw e
+      }
     }
   },
 }
