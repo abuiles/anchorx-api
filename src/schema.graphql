@@ -13,4 +13,5 @@ type Mutation {
   signup(username: String!): User!
   payment(amount: String!, senderUsername: String!, recipientUsername: String!, memo: String): Transaction
   credit(amount: String!, username: String!): Transaction
+  debit(amount: String!, username: String!): Transaction
 }
