@@ -38,6 +38,16 @@ const resolvers = {
   },
   Mutation: {
     async signup(_, { username }, context: Context, info) {
+      let user = await context.db.query.user({
+        where: {
+          username: username
+        }
+      })
+
+      if (user) {
+        return user
+      }
+
       const keypair = Keypair.random()
 
       const secret = AES.encrypt(
@@ -51,7 +61,7 @@ const resolvers = {
         stellarSeed: secret
       }
 
-      const user = await context.db.mutation.createUser(
+      user = await context.db.mutation.createUser(
         { data },
         info
       )
