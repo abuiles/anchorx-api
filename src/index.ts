@@ -3,6 +3,7 @@ import { importSchema } from 'graphql-import'
 import { Prisma } from './generated/prisma'
 import {
   Context,
+  addSigners,
   allowTrust,
   createAccountInLedger,
   createTrustline,
@@ -66,6 +67,10 @@ const resolvers = {
         info
       )
 
+      // keypair for issuing account - no bueno, use base account as
+      // defined here https://www.stellar.org/developers/guides/anchor/index.html#account-structure
+      const issuer = Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX')
+
       /*
         In a production app, you don't want to block to do this
         operation or have the keys to create accounts in this same
@@ -75,9 +80,10 @@ const resolvers = {
       await createAccountInLedger(keypair.publicKey())
       await createTrustline(keypair)
       await allowTrust(keypair.publicKey())
+      await addSigners(keypair)
       await payment(
-        // keypair for issuing account - no bueno, we'll replace this later
-        Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX'),
+        issuer,
+        issuer.publicKey(),
         keypair.publicKey(),
         '10'
       )
@@ -99,17 +105,17 @@ const resolvers = {
       const sender = result.find(u => u.username === senderUsername)
       const recipient = result.find(u => u.username === recipientUsername)
 
-      const signerKeys = Keypair.fromSecret(
-        // Use something like KMS in production
-        AES.decrypt(
-          sender.stellarSeed,
-          ENVCryptoSecret
-        ).toString(enc.Utf8)
+      // This is the secret key for the account added as signer with mid threshold
+      const signer = Keypair.fromSecret(
+        // Use something like KMS in production and run in a lambda or
+        // somewhere which can not be easily access from the internet.
+        'SBFSAN35IAEHVLXZY3BSEJBAND5P6YM6QLNQY3WZH7D3URL6JQEFGOGY'
       )
 
       try {
         const { hash } = await payment(
-          signerKeys,
+          signer,
+          sender.stellarAccount,
           recipient.stellarAccount,
           amount
         )
@@ -128,10 +134,12 @@ const resolvers = {
         }
       })
 
+      const issuer = Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX')
+
       try {
         const { hash } = await payment(
-          // keypair for issuing account - no bueno
-          Keypair.fromSecret('SBYZ5NEJ34Y3FTKADVBO3Y76U6VLTREJSW4MXYCVMUBTL2K3V4Y644UX'),
+          issuer,
+          issuer.publicKey(),
           user.stellarAccount,
           amount
         )
@@ -150,20 +158,20 @@ const resolvers = {
         }
       })
 
-      const keypair = Keypair.fromSecret(
-        AES.decrypt(
-          user.stellarSeed,
-          ENVCryptoSecret
-        ).toString(enc.Utf8)
-      )
-
       // When you send back a custom asset to the issuing account, the
-      // asset you send back get destroyed
+      // asset you send back gets destroyed
       const issuingAccount = 'GBX67BEOABQAELIP2XTC6JXHJPASKYCIQNS7WF6GWPSCBEAJEK74HK36'
+
+      const issuer = Keypair.fromSecret(
+        // Use something like KMS in production and run in a lambda or
+        // somewhere which can not be easily access from the internet.
+        'SBFSAN35IAEHVLXZY3BSEJBAND5P6YM6QLNQY3WZH7D3URL6JQEFGOGY'
+      )
 
       try {
         const { hash } = await payment(
-          keypair,
+          issuer,
+          user.stellarAccount,
           issuingAccount,
           amount
         )

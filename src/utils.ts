@@ -105,11 +105,11 @@ export async function allowTrust(trustor: string) {
   }
 }
 
-export async function payment(signerKeys: Keypair, destination: string, amount: string) {
+export async function payment(signerKeys: Keypair, origin: string, destination: string, amount: string) {
   Network.useTestNetwork();
   const stellarServer = new Server('https://horizon-testnet.stellar.org');
 
-  const account = await stellarServer.loadAccount(signerKeys.publicKey())
+  const account = await stellarServer.loadAccount(origin)
 
   let transaction = new TransactionBuilder(account)
     .addOperation(
@@ -132,4 +132,44 @@ export async function payment(signerKeys: Keypair, destination: string, amount: 
     console.log(`failure ${e}`)
     throw e
   }
+}
+
+export async function addSigners(keypair: Keypair) {
+  Network.useTestNetwork();
+  const stellarServer = new Server('https://horizon-testnet.stellar.org');
+
+  const paymentsId = 'GCQOZGXMH6MI3JKWWO365BCXUJN6MFZR7XMKKCHGDY2K6JNCYFRH6M4C'
+  const adminId = 'GA6KTSHWU6GX6ER6HTWMGONS4VLQ4ZHONU6RKBGXTT7HFLV6NHX3ONAL'
+
+  const account = await stellarServer.loadAccount(newAccountKeypair.publicKey())
+
+  var transaction = new TransactionBuilder(account)
+    .addOperation(
+      Operation.setOptions({
+        signer: {
+          ed25519PublicKey: paymentsId,
+          weight: 2
+        }
+      })
+    )
+    .addOperation(
+      Operation.setOptions({
+        signer: {
+          ed25519PublicKey: adminId,
+          weight: 5
+        }
+      }))
+    .addOperation(
+      Operation.setOptions({
+        masterWeight: 0, // set master key weight to 0, it can't do anything
+        lowThreshold: 1,
+        medThreshold: 2, // Allows  paymentsId to send payments
+        highThreshold: 5 // Allows adminId to manage account
+      }))
+    .build();
+
+  transaction.sign(keypair)
+
+  const result = await server.submitTransaction(transaction)
+
 }
